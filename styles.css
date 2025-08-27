@@ -1,0 +1,110 @@
+:root {
+  --bg: #f4f7fb;
+  --panel: #ffffff;
+  --text: #1f252f;
+  --muted: #6b7280;
+  --accent: #0ea5e9;
+  --accent-contrast: #ffffff;
+  --shadow: 0 8px 24px rgba(0,0,0,0.06);
+  --radius: 16px;
+
+  --bubble-bot: #eef2f7;
+  --bubble-me: var(--accent);
+  --bubble-me-text: #fff;
+
+  --code-bg: #f6f8fa;
+  --code-border: #e3e8ef;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+}
+
+.app { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+.header { display:flex; gap:16px; align-items:center; justify-content:space-between; }
+.brand { display:flex; gap:12px; align-items:center; }
+.logo { font-size: 28px; }
+.title h1 { margin:0; font-size: 20px; }
+.subtitle { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.toolbar { display:flex; gap:8px; flex-wrap:wrap; }
+
+.btn {
+  background: var(--panel); border: 1px solid #e5e7eb; padding: 8px 12px; border-radius: 10px;
+  box-shadow: var(--shadow); cursor: pointer;
+}
+.btn:hover { background:#f9fafb; }
+.btn-ghost { background: transparent; border: 1px dashed #d1d5db; }
+.btn-danger { background:#fee2e2; border-color:#fecaca; }
+.btn.primary { background: var(--accent); color: var(--accent-contrast); border-color: transparent; }
+.btn.primary:hover { filter: brightness(0.95); }
+
+.select, textarea {
+  background: var(--panel); border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px;
+}
+
+.controls { display:flex; gap:12px; flex-wrap:wrap; margin: 16px 0; }
+.field { display:flex; flex-direction:column; gap:6px; min-width: 200px; }
+
+.chat { background: var(--panel); border:1px solid #e5e7eb; border-radius: var(--radius); box-shadow: var(--shadow); }
+.messages { padding: 16px; display:flex; flex-direction:column; gap:12px; max-height: 60vh; overflow:auto; scroll-behavior:smooth; }
+.typing { padding: 8px 16px; color: var(--muted); }
+.progress { height:3px; background: linear-gradient(90deg, var(--accent), transparent); border-radius:999px; animation: progressSlide 1.2s linear infinite; margin: 0 16px 8px; }
+@keyframes progressSlide { from{background-position:0 0;} to{background-position:200% 0;} }
+
+.bubble {
+  background: var(--bubble-bot);
+  padding: 14px 16px;
+  border-radius: 18px;
+  line-height: 1.55;
+  position: relative;
+  word-wrap: break-word;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: fadeInUp 0.25s ease forwards;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+@keyframes fadeInUp { to { opacity:1; transform:none; } }
+
+.me {
+  align-self: flex-end;
+  background: var(--bubble-me);
+  color: var(--bubble-me-text);
+}
+.bot { align-self: flex-start; }
+
+.actions { display:flex; gap:6px; position:absolute; top:8px; right:8px; }
+.icon-btn { border:none; background:transparent; cursor:pointer; opacity:.7; }
+.icon-btn:hover { opacity:1; }
+
+.bubble .content :is(h1,h2,h3){ margin: .3em 0; }
+.bubble .content pre { background: var(--code-bg); border:1px solid var(--code-border); padding:12px; border-radius:12px; overflow:auto; }
+.bubble .content code:not(pre code) { background: var(--code-bg); border:1px solid var(--code-border); padding:2px 4px; border-radius:6px; }
+.bubble a { text-decoration: underline; word-break: break-word; }
+
+.composer {
+  background: var(--panel); border:1px solid #e5e7eb; border-radius: var(--radius);
+  padding: 10px; margin-top: 12px; box-shadow: var(--shadow);
+  position: sticky; bottom: 0;
+}
+.composer-row { display:flex; gap:10px; align-items:flex-end; }
+textarea { flex:1; resize:none; max-height: 180px; }
+.muted { color: var(--muted); font-size: 12px; }
+.hints { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.hint { border:none; background:#eef2f7; color:#1f2937; padding:6px 10px; border-radius: 999px; cursor:pointer; }
+.hint:hover { filter:brightness(.96); }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:#0b1220; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8; --bubble-bot:#0b2035;
+    --code-bg:#0b1220; --code-border:#1f2a44;
+  }
+  .btn-ghost { border-color:#1f2a44; }
+  .btn-danger { background:#3b0d0d; border-color:#5f1f1f; }
+  .bubble { border-color:#1f2a44; }
+}
