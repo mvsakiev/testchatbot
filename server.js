@@ -1,84 +1,107 @@
+// server.js
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import OpenAI from 'openai';
 
 const app = express();
-app.use(express.json({ limit: '1mb' }));
 
-// CORS
+// ---------- базовая настройка ----------
+app.use(express.json({ limit: '1mb' }));
 app.use(cors({
   origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
   credentials: false
 }));
 
-// Статическая раздача фронта (положи index.html рядом)
+// Раздаём фронтенд из той же папки (index.html, styles.css, script.js)
 app.use(express.static('.'));
 
+// ---------- OpenAI клиент ----------
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Хелпер: написать SSE событие
-function writeSSE(res, obj) {
-  res.write(`data: ${JSON.stringify(obj)}\n\n`);
+// Утилита для отправки SSE событий
+function sendSSE(res, payload) {
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
 }
 
+// ---------- API ----------
 app.post('/api/answer', async (req, res) => {
   const { question, subject, grade, history = [], settings = {}, dialogId } = req.body || {};
-  if (!question) return res.status(400).json({ error: 'Missing question' });
+  if (!question) return res.status(400).json({ error: 'Missing "question"' });
 
-  // Готовим системный промпт (MVP)
-  const system = [
-    `Ты — учитель по предмету: ${subject || 'Общий'}.`,
+  // Инструкции для модели (аналог "system" в старом API)
+  const instructions = [
+    `Ты — дружелюбный учитель по предмету: ${subject || 'Общий'}.`,
     `Объясняй на уровне класса: ${grade || '7'}.`,
     `Стиль объяснений: ${settings.explainLevel || 'простыми словами'}.`,
-    `Если есть формулы — используй KaTeX (строчные $...$ и блочные $$...$$ или \`\`\`math блоки).`,
-    `Структурируй ответ: краткое объяснение, затем шаги/пример, затем вывод.`
+    `Если есть формулы — используй KaTeX: $...$, $$...$$ или \`\`\`math блоки.`,
+    `Структура ответа: краткое объяснение → шаги/пример → вывод.`
   ].join(' ');
 
-  // Клиент ждёт SSE
+  // История для модели: фронт хранит role 'bot', маппим в 'assistant'
+  const historyForModel = Array.isArray(history)
+    ? history.map(m => ({
+        role: m.role === 'bot' ? 'assistant' : (m.role || 'user'),
+        content: m.content || ''
+      }))
+    : [];
+
+  // Заголовки SSE
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
 
+  // Если клиент оборвёт соединение — аккуратно завершаем
+  let clientClosed = false;
+  req.on('close', () => { clientClosed = true; try { res.end(); } catch {} });
+
   try {
-    // Используем Responses API со стримингом
-    // В официальной документации: при stream: true сервер эмитит SSE события по мере генерации. :contentReference[oaicite:2]{index=2}
-    const response = await openai.responses.stream({
-      model: 'gpt-4.1-mini', // можешь заменить на свой доступный экономичный модельный вариант
-      // Альтернатива: 'gpt-4o-mini' / другой актуальный компактный
-      messages: [
-        { role: 'system', content: system },
-        ...history.map(m => ({ role: m.role, content: m.content })),
+    // ВАЖНО: в Responses API используем input (НЕ messages) + instructions
+    const stream = await openai.responses.stream({
+      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+      instructions,
+      input: [
+        ...historyForModel,
         { role: 'user', content: question }
       ],
       stream: true
     });
 
-    // Подписка на события SDK v4 (стрим текстовых дельт)
-    response.on('text.delta', (delta) => {
-      writeSSE(res, { type: 'chunk', delta });
+    // Поток дельт текста
+    stream.on('text.delta', (delta) => {
+      if (clientClosed) return;
+      sendSSE(res, { type: 'chunk', delta });
     });
 
-    response.on('text.completed', () => {
-      writeSSE(res, { type: 'done' });
+    // Завершение текста
+    stream.on('text.completed', () => {
+      if (clientClosed) return;
+      sendSSE(res, { type: 'done' });
       res.end();
     });
 
-    response.on('error', (err) => {
+    // Ошибки стрима
+    stream.on('error', (err) => {
       console.error('OpenAI stream error:', err);
-      try { writeSSE(res, { type: 'error', message: 'OpenAI error' }); } catch {}
-      res.end();
+      if (!clientClosed) {
+        try { sendSSE(res, { type: 'error', message: 'OpenAI error' }); } catch {}
+        try { res.end(); } catch {}
+      }
     });
   } catch (err) {
-    console.error(err);
-    // Если твой тариф/SDK не поддерживает .responses.stream,
-    // можно сделать потоковый fetch вручную и парсить SSE (или вернуть обычный JSON).
-    res.status(500).json({ error: 'Server error' });
+    console.error('Handler error:', err);
+    if (!clientClosed) res.status(500).json({ error: 'Server error' });
   }
 });
 
-// healthcheck
+// Простой healthcheck
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
+// ---------- старт сервера ----------
 const port = process.env.PORT || 8787;
-app.listen(port, () => console.log(`API listening on http://localhost:${port}`));
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('⚠️  OPENAI_API_KEY не задан. Установите переменную окружения или .env');
+  }
+});
