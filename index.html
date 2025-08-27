@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Учебный чат — предмет и класс</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Подсветка кода -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+  <!-- KaTeX для формул -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+</head>
+<body>
+  <main class="app" id="appRoot">
+    <div class="header">
+      <div class="brand">
+        <span class="logo">🎓</span>
+        <div class="title">
+          <h1>Учебный помощник</h1>
+          <p class="subtitle">Выбери предмет, класс и задавай вопросы</p>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <select id="dialogSelect" class="select" title="Выбор диалога"></select>
+        <button id="newDialog" class="btn">+ Новый</button>
+        <button id="renameDialog" class="btn btn-ghost">Переименовать</button>
+        <button id="clearDialog" class="btn btn-danger" title="Очистить чат">🧹 Очистить</button>
+        <button id="exportDialog" class="btn btn-ghost" title="Экспорт диалога">⬇️ Экспорт</button>
+        <button id="importDialog" class="btn btn-ghost" title="Импорт диалога">⬆️ Импорт</button>
+      </div>
+    </div>
+
+    <section class="controls">
+      <div class="field">
+        <label for="subject">Предмет</label>
+        <select id="subject" class="select">
+          <option>Математика</option>
+          <option>Информатика</option>
+          <option>Физика</option>
+          <option>Химия</option>
+          <option>Биология</option>
+          <option>История</option>
+          <option>Русский язык</option>
+          <option>Английский язык</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="grade">Класс</label>
+        <select id="grade" class="select">
+          <option>5</option><option>6</option><option>7</option>
+          <option>8</option><option>9</option><option>10</option><option>11</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="explainLevel">Уровень объяснений</label>
+        <select id="explainLevel" class="select">
+          <option value="простыми словами">Простыми словами</option>
+          <option value="с примерами">С примерами</option>
+          <option value="подготовка к ОГЭ/ЕГЭ">Подготовка к ОГЭ/ЕГЭ</option>
+          <option value="строго и кратко">Строго и кратко</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="chat">
+      <div id="messages" class="messages" aria-live="polite" aria-label="Сообщения чата"></div>
+      <div id="progressBar" class="progress" hidden aria-hidden="true"></div>
+      <div id="typing" class="typing" hidden>Модель печатает…</div>
+    </section>
+
+    <section class="composer">
+      <form id="composer" autocomplete="off">
+        <div class="composer-row">
+          <textarea id="input" rows="1" placeholder="Сформулируй вопрос…" maxlength="1000"></textarea>
+          <div class="right">
+            <span id="charCounter" class="muted">0 / 1000</span>
+            <button id="send" class="btn primary" type="submit" title="Отправить (Ctrl/⌘ + Enter)">Отправить</button>
+          </div>
+        </div>
+        <div class="hints">
+          <button type="button" class="hint">Объясни теорему Пифагора</button>
+          <button type="button" class="hint">Реши квадратное уравнение</button>
+          <button type="button" class="hint">Разбери части речи</button>
+          <button type="button" class="hint">Подготовь 3 задачи с ответами</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- Библиотеки: defer сохраняет порядок -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" defer></script>
+  <script src="script.js" defer></script>
+</body>
+</html>
